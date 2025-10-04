@@ -36,19 +36,17 @@ public final class FailedTaskRunner {
         for(int i = 0; i < 100; i++){
             long startAvgTime = System.currentTimeMillis();
             long avgTime = 0; //Calc the avg time taken for each task
-            task = FailedTaskGenerator.generateFailedTaskWithControlledProbability();
+
+            task = switch (experiment){
+                case CONTROLLED -> FailedTaskGenerator.generateFailedTaskWithControlledProbability();
+                case UNCONTROLLED -> FailedTaskGenerator.generateFailedTaskWithUnControlledProbability();
+            };
 
             while(adheresToDomain(task)){
-                //Randomness for a task to succeed
-                int rand = (int) (RANDOM.nextDouble() * 100) + 1;
-
-                boolean probToSucceed;
-
-                if(decayType == DECAY.EXPONENTIAL){
-                    probToSucceed = succeedsWithExponentialProbability(experiment, task);
-                }else{
-                    probToSucceed = succeedsWithLinearProbability(experiment, task);
-                }
+                boolean probToSucceed = switch (decayType) {
+                    case EXPONENTIAL -> succeedsWithExponentialProbability(experiment, task);
+                    case LINEAR -> succeedsWithLinearProbability(experiment, task);
+                };
 
                 if(probToSucceed){
                     task.setStatus(FailedTask.Status.SUCCESS);
@@ -135,7 +133,10 @@ public final class FailedTaskRunner {
     boolean succeedsWithExponentialProbability(EXPERIMENT experiment, FailedTask task){
         Priority prio = task.priority();
         int failureCount = task.failureCount();
-        double roll = experiment == EXPERIMENT.CONTROLLED ? RANDOM.nextDouble() : Math.random();
+        double roll = switch (experiment){
+            case CONTROLLED -> RANDOM.nextDouble();
+            case UNCONTROLLED -> Math.random();
+        };
 
         //Probability of success reduces exponentially the more times the tasks fails
         double baseProbability = switch (prio){
@@ -163,7 +164,10 @@ public final class FailedTaskRunner {
     boolean succeedsWithLinearProbability(EXPERIMENT experiment, FailedTask task){
         Priority prio = task.priority();
         int failureCount = task.failureCount();
-        double roll = experiment == EXPERIMENT.CONTROLLED ? RANDOM.nextDouble() : Math.random();
+        double roll = switch (experiment){
+            case CONTROLLED -> RANDOM.nextDouble();
+            case UNCONTROLLED -> Math.random();
+        };
 
         //Probability of success reduces exponentially the more times the tasks fails
         double baseProbability = switch (prio){
